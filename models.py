@@ -36,6 +36,8 @@ class Game(ndb.Model):
     letters_tried = ndb.StringProperty(required=True)
     game_over = ndb.BooleanProperty(required=True, default=False)
     cancelled = ndb.BooleanProperty(required=True, default=False)
+    guesses = ndb.StringProperty(repeated=True)
+    messages_history = ndb.StringProperty(repeated=True)
     user = ndb.KeyProperty(required=True, kind='User')
 
     @classmethod
@@ -63,6 +65,8 @@ class Game(ndb.Model):
         form.current_word = self.current_word
         form.game_over = self.game_over
         form.cancelled = self.cancelled
+        form.guesses = self.guesses
+        form.messages_history = self.messages_history
         form.message = message
         return form
 
@@ -109,8 +113,10 @@ class GameForm(messages.Message):
     current_word = messages.StringField(4, required=True)
     game_over = messages.BooleanField(5, required=True)
     cancelled = messages.BooleanField(6, required=True)
-    message = messages.StringField(7, required=True)
-    user_name = messages.StringField(8, required=True)
+    guesses = messages.StringField(7, repeated=True)
+    messages_history = messages.StringField(8, repeated=True)
+    message = messages.StringField(9, required=True)
+    user_name = messages.StringField(10, required=True)
 
 class GameForms(messages.Message):
     """Return multiple GameForms"""
@@ -143,6 +149,16 @@ class HighScoreForms(messages.Message):
     """Return multiple ScoreForms"""
     results_to_show = messages.IntegerField(1)
     items = messages.MessageField(ScoreForm, 2, repeated=True)
+
+class RankingForm(messages.Message):
+    """RankingForm for showing rankings among users"""
+    user_name = messages.StringField(1, required=True)
+    winning_percentage = messages.FloatField(2, required=True)
+    average_score = messages.FloatField(3, required=True)
+
+class RankingForms(messages.Message):
+    """Return multiple RankingForms"""
+    items = messages.MessageField(RankingForm, 1, repeated=True)
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""

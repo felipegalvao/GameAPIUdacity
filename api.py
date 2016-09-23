@@ -14,7 +14,7 @@ from google.appengine.ext import ndb
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, MakeGuessForm,\
-    ScoreForms, GameForms, HighScoreForms
+    ScoreForms, GameForms, HighScoreForms, RankingForm, RankingForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -125,6 +125,7 @@ class HangmanApi(remote.Service):
             return game.to_form('Your guess must be a letter.')
 
         game.letters_tried = game.letters_tried + ((request.guess).lower())
+        game.guesses.append(request.guess)
 
         if (request.guess).lower() in game.word_to_guess:
             positions = [pos for pos, char in enumerate(game.word_to_guess) if char == request.guess]
@@ -134,6 +135,8 @@ class HangmanApi(remote.Service):
             game.current_word = new_current_word
             game.word_remaining = (game.word_remaining).replace(request.guess, "")
             if game.word_remaining == "":
+                msg = 'You win!'
+                game.messages_history.append(msg)
                 game.end_game(True)
 
                 # Update user information for ranking after win
@@ -141,7 +144,7 @@ class HangmanApi(remote.Service):
                 user.wins += 1
                 user.put()
 
-                return game.to_form('You win!')
+                return game.to_form(msg)
             else:
                 msg = 'This letter is in the word. You can continue guessing.'
         else:
@@ -149,14 +152,17 @@ class HangmanApi(remote.Service):
             game.attempts_remaining -= 1
 
         if game.attempts_remaining < 1:
+            msg = msg + ' Game over!'
+            game.messages_history.append(msg)
             game.end_game(False)
 
             # Update user information for ranking after loss
             user.games_played += 1
-            user.put()            
+            user.put()
 
-            return game.to_form(msg + ' Game over!')
+            return game.to_form(msg)
         else:
+            game.messages_history.append(msg)
             game.put()
             return game.to_form(msg)
 
@@ -216,6 +222,30 @@ class HangmanApi(remote.Service):
                     'A User with that name does not exist!')
         games = Game.query(Game.user == user.key)
         return GameForms(items=[game.to_form('Returning game for user:' + user.name) for game in games])
+
+    @endpoints.method(response_message=RankingForms,
+                      path='rankings',
+                      name='get_rankings',
+                      http_method='GET')
+    def get_rankings(self, request):
+        """Return all scores"""
+        users = User.query().order(-User.winning_percentage).fetch()
+        rankings_list = []
+        for user in users:
+            user_name = user.name
+            winning_percentage = user.winning_percentage
+            user_scores = Score.query(Score.user == user.key).fetch()
+            if len(user_scores) == 0:
+                average_score = 0.0
+            else:
+                sum_user_scores = sum([score.score for score in user_scores])
+                print(sum_user_scores)
+                average_score = sum_user_scores / float(len(user_scores))
+            rankings_list.append(RankingForm(user_name=user_name,
+                                             winning_percentage=winning_percentage,
+                                             average_score=average_score))
+        sorted(rankings_list, key=lambda x: (-x.winning_percentage, x.average_score))
+        return RankingForms(items=rankings_list)
 
     @staticmethod
     def _cache_average_attempts():
