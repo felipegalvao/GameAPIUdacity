@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-`
-"""api.py - Create and configure the Game API exposing the resources.
-This can also contain game logic. For more complex games it would be wise to
-move game logic to another file. Ideally the API will be simple, concerned
-primarily with communication to/from the API's users."""
+"""api.py - API for a Hangman game. With the API endpoints, the user will be
+able to create users, create a game, setting the number of attempts and the
+word to be guessed. You can make a guess. And finally, you can retrieve some
+information about the games, like the high scores, the ranking and a Game
+History, informing the guesses made in that game and the messages returned for
+each guess."""
 
 
-import logging
 import endpoints
 from protorpc import remote, messages
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
-from google.appengine.ext import ndb
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, MakeGuessForm,\
@@ -93,7 +93,7 @@ class HangmanApi(remote.Service):
                       response_message=GameForm,
                       path='game/cancel/{urlsafe_game_key}',
                       name='cancel_game',
-                      http_method='GET')
+                      http_method='PUT')
     def cancel_game(self, request):
         """Cancel current game."""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
@@ -118,10 +118,13 @@ class HangmanApi(remote.Service):
         # Set up restrictions for making a guess, such as game should not be
         # cancelled or over
         if game.game_over:
-            return game.to_form('Game already over!')
+            raise endpoints.ForbiddenException('Illegal action: Game is already over.')
 
         if game.cancelled:
             return game.to_form('Game cancelled')
+
+        if (request.guess).isalpha() == False:
+            return game.to_form('Your guess must be a letter.')
 
         if request.guess in game.letters_tried:
             return game.to_form('This letter was already tried.')
@@ -129,8 +132,6 @@ class HangmanApi(remote.Service):
         if len(request.guess) > 1:
             return game.to_form('Your guess must be one letter only.')
 
-        if (request.guess).isalpha() == False:
-            return game.to_form('Your guess must be a letter.')
 
         # Register the current guess
         game.letters_tried = game.letters_tried + ((request.guess).lower())
@@ -246,7 +247,9 @@ class HangmanApi(remote.Service):
         if not user:
             raise endpoints.NotFoundException(
                     'A User with that name does not exist!')
-        games = Game.query(Game.user == user.key)
+        games = Game.query(Game.user == user.key,
+                           Game.cancelled == False,
+                           Game.game_over == False).fetch()        
         return GameForms(items=[game.to_form('Returning game for user:' +
                                              user.name) for game in games])
 

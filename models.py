@@ -34,7 +34,7 @@ class Game(ndb.Model):
     word_remaining = ndb.StringProperty(required=True)
     current_word = ndb.StringProperty(required=True)
     attempts_allowed = ndb.IntegerProperty(required=True)
-    attempts_remaining = ndb.IntegerProperty(required=True, default=5)
+    attempts_remaining = ndb.IntegerProperty(required=True, default=6)
     letters_tried = ndb.StringProperty(required=True)
     game_over = ndb.BooleanProperty(required=True, default=False)
     cancelled = ndb.BooleanProperty(required=True, default=False)

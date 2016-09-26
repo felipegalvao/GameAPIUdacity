@@ -11,17 +11,26 @@
 
 
 ##Game Description:
-Hangman is a game where the player have to guess a word. A word is defined and a
-and a maximum number of 'attempts' (usually, 6). 'Guesses' are sent to the
-'make_guess' endpoint which check if the letter guessed is in the word to be
-guessed. It will respond based on the result of that check. The number of
-attempts is only reduced if a guess is wrong. When there are no more guesses,
-the game is over. Many different Guess a Number games can be played by many
-different Users at any given time. Each game can be retrieved or played by
-using the path parameter `urlsafe_game_key`.
+Hangman is a game where the player have to guess a word. When you create a new
+game through the 'new_game' API endpoint, a word to be guessed is defined and a
+and a maximum number of 'attempts'. If the max attempts is not set, the default is
+a maximum number of attempts equal to 6 (in the Hangman game, these usually are
+equivalent to the arms, legs, body and head).
 
-Score is defined by a formula, based on the proportion of attempts allowed,
-attempts remaining and the length of the word to be guessed.
+'Guesses' are sent to the 'make_guess' endpoint which check if the letter
+guessed is in the word to be guessed. It will respond based on the result of
+that check. The number of attempts is only reduced if a guess is wrong. When
+there are no more guesses, the game is over. Many different Hangman games can be
+played by many different Users at any given time. Each game can be retrieved or
+played by using the path parameter 'urlsafe_game_key'.
+
+Score is defined by the following formula:
+
+score = attempts_remaining / attempts_allowed * length of word_to_guess
+
+This formula considers the score of a game as the attempts used to guess the
+word, relative to the max attempts allowed. It also gives a bigger score to
+longer words, considering that they are harder to guess.
 
 ##Files Included:
  - api.py: Contains endpoints and game playing logic.
@@ -58,7 +67,7 @@ attempts remaining and the length of the word to be guessed.
 
  - **cancel_game**
     - Path: 'game/cancel/{urlsafe_game_key}'
-    - Method: GET
+    - Method: PUT
     - Parameters: urlsafe_game_key
     - Returns: GameForm with current game state.
     - Description: Cancel the game and returns a form with a message informing
