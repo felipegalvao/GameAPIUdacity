@@ -1,0 +1,41 @@
+What additional properties did you add to your models and why?
+
+  For the user, I added games_played, wins, winning_percentage and
+  average_score, apart from the already created name and email. All these
+  properties were added to facilitate the showing of rankings on the API. The
+  winning_percentage is a ComputedProperty, a proportion between the amount of
+  wins and amount of games played.
+
+  For the Game model, there are a lot of properties. The word_to_guess remains
+  unchanged while the game goes, while the word_remaining will be altered when
+  a user guesses a letter right, removing the right letter from the original
+  word if the guess is right. When the word_remaining becomes an empty
+  string, the game is over. This is a helpful property to have, because with
+  that property, it gets really easy know when the game is over. The
+  current_word property can be shown to the user so that he knows how
+  many letters are still remaining. The letters_tried property shows the
+  letters already guessed by the user. This also allows the code to disallow an
+  user to guess a letter two times. There are also properties to show if the
+  game is cancelled and the guesses and messages history for the Game, to be
+  used in an API endpoint.
+
+  For the Score model, the properties are mostly informative. Aside from the
+  User, the date, a "won" property informing if the user won the game or not,
+  the number of guesses used, the score, which is based on the attempts made,
+  attempts allowed and the length of the word to be guessed, and finally, the
+  word that was to be guessed in that game.
+
+What were some of the trade-offs or struggles you faced when implementing the new game logic?
+
+  The new game model is more complex, so, sometimes, you have to think if you
+  can do what you need to do with the Models and Properties that you already
+  have or if you need to create new Models or Properties for that. Each new
+  model or property may add some complexity to the project, and that can make
+  a project harder to manage. In that sense, organization was vital for
+  completing the project without getting confused by the complexity. Comments
+  are also very helpful, so that you don't get lost in the code. So, to
+  summarize, it is important to think a little before you do any coding, to
+  clear the ideas and start in the right path from the beginning. If you start
+  writing code right away, you may make decisions that will leave you on a hard
+  spot latter on, and the work for fixing it will be way higher than the time
+  you will dedicate to think everything through.

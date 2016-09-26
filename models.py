@@ -1,4 +1,4 @@
-"""Models for the Tic-Tac-Toe game"""
+"""Models for the Hangman game"""
 from __future__ import division
 
 import random
@@ -7,6 +7,8 @@ from protorpc import messages
 from google.appengine.ext import ndb
 
 def calcWinningPercentage(games_played, wins):
+    """Formula for calculation of Winning Percentage, to be used as a Computed
+    Property on the User Model"""
     winning_percentage = 0.0
     if games_played == 0:
         winning_percentage = 0.0
@@ -77,7 +79,9 @@ class Game(ndb.Model):
         self.put()
         # Add the game to the score 'board'
         score = Score(user=self.user, date=date.today(), won=won,
-                      guesses=len(self.letters_tried), score=(
+                      guesses=len(self.letters_tried),
+                      word_to_guess=self.word_to_guess,
+                      score=(
                       float(self.attempts_remaining) /
                       float(self.attempts_allowed) *
                       float(len(self.word_to_guess))))
@@ -100,10 +104,12 @@ class Score(ndb.Model):
     won = ndb.BooleanProperty(required=True)
     guesses = ndb.IntegerProperty(required=True)
     score = ndb.FloatProperty(required=True)
+    word_to_guess = ndb.StringProperty(required=True)
 
     def to_form(self):
         return ScoreForm(user_name=self.user.get().name, won=self.won,
-                         date=str(self.date), guesses=self.guesses, score=self.score)
+                         date=str(self.date), guesses=self.guesses,
+                         score=self.score, word_to_guess=self.word_to_guess)
 
 class GameForm(messages.Message):
     """GameForm for outbound game state information"""
@@ -122,6 +128,15 @@ class GameForms(messages.Message):
     """Return multiple GameForms"""
     items = messages.MessageField(GameForm, 1, repeated=True)
 
+class GameHistoryForm(messages.Message):
+    """Form used to show a Game's history"""
+    guess = messages.StringField(1, required=True)
+    message = messages.StringField(2, required=True)
+
+class GameHistoryForms(messages.Message):
+    """Return multiple GameHistoryForms"""
+    items = messages.MessageField(GameHistoryForm, 1, repeated=True)
+
 class NewGameForm(messages.Message):
     """Used to create a new game"""
     user_name = messages.StringField(1, required=True)
@@ -132,7 +147,6 @@ class MakeGuessForm(messages.Message):
     """Used to make a guess in an existing game"""
     guess = messages.StringField(1, required=True)
 
-
 class ScoreForm(messages.Message):
     """ScoreForm for outbound Score information"""
     user_name = messages.StringField(1, required=True)
@@ -140,6 +154,7 @@ class ScoreForm(messages.Message):
     won = messages.BooleanField(3, required=True)
     guesses = messages.IntegerField(4, required=True)
     score = messages.FloatField(5, required=True)
+    word_to_guess = messages.StringField(6, required=True)
 
 class ScoreForms(messages.Message):
     """Return multiple ScoreForms"""
